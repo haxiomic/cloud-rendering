@@ -12,30 +12,101 @@
 	}
 	canvas{
 		display: block;
+/*		transform: scale(2.0, 2.0);
+		transform-origin: top left;*/
 	}
 	</style>
 </head>
 <body>
 	<!-- Shaders -->
 	<script id="screenProjectionVS" type="x-shader/x-vertex">
-	varying vec3 vcoord;
+	varying vec3 worldCoord;
 
 	void main(void){
-		vcoord = position;
+		worldCoord = position + 0.5;
 		gl_Position = (projectionMatrix * modelViewMatrix * vec4(position, 1.0));
 	}</script>
 
-	<script id="backsideFS" type="x-shader/x-fragment">
-	varying vec3 vcoord;
+	<script id="faceCoordinatesFS" type="x-shader/x-fragment">
+	varying vec3 worldCoord;
 	void main(void){
-		gl_FragColor = vec4(1., 0., 0., 1.);
+		gl_FragColor = vec4(worldCoord, 1.);
 	}
 	</script>
 
+	<script id="raytraceCloudsFS" type="x-shader/x-fragment">
+	uniform vec2 backfaceInvResolution;
+	uniform sampler2D backfaceTexture;
+	uniform sampler2D noiseTexture;
 
+	varying vec3 worldCoord;
+
+	
+	float noise( in vec3 x )
+	{
+	    vec3 p = floor(x);
+	    vec3 f = fract(x);
+		f = f*f*(3.0-2.0*f);
+		
+		vec2 uv = (p.xy+vec2(37.0,17.0)*p.z) + f.xy;
+		vec2 rg = texture2D( noiseTexture, (uv+ 0.5)/256.0, -100.0 ).yx;
+		return mix( rg.x, rg.y, f.z );
+	}
+
+	vec4 raymarch( in vec3 rayStart, in vec3 rayEnd){
+		vec4 sum = vec4(vec3(1.), 0.0);
+
+		//dist from start to camera
+		float scd = distance(cameraPosition, rayStart);
+
+		vec3 rayVec = rayEnd - rayStart;
+		float rayLen = length(rayVec);
+		vec3 rayDir = rayVec / rayLen;
+
+		float t = 0.0;
+		float delta = 0.0;
+
+		for(int i = 0; i < 120; i++){
+			vec3 pos = rayStart + t * rayDir;
+
+			vec3 q = (pos + vec3(1.8))*7.0;
+			float f;
+			f  = 0.5000*noise( q ); q = q*2.02;
+			f += 0.2500*noise( q ); q = q*2.03;
+			f += 0.12500*noise( q ); q = q*2.01;
+			// f += 0.06250*noise( q ); q = q*2.02;
+			// f += 0.03125*noise( q );
+
+			float den = f * f * .1;
+
+			if(den > 0.01){
+				sum += den * (1. - sum.a);
+			}
+
+			t += max(0.01, (scd * .2 + t)*0.01);
+
+			if(t > rayLen || sum.a > 0.99)
+				break;
+		}
+
+	    return clamp( sum, 0.0, 1.0 );
+	}
+
+	void main(void){
+		vec4 bfsamp = texture2D(backfaceTexture, gl_FragCoord.xy * backfaceInvResolution);
+
+		vec3 rayStart = worldCoord;
+		vec3 rayEnd = bfsamp.xyz;
+
+		gl_FragColor = raymarch(rayStart, rayEnd);
+	}
+	</script>
+
+	<!-- libraries -->
 	<script type="text/javascript" src="js/three.min.js"></script>
 	<script type="text/javascript" src="js/controls/OrbitControls.js"></script>
-
+	<script type="text/javascript" src="js/shaders/SkyShader.js"></script>
+	<!-- app -->
 	<script type="text/javascript" src="js/app.js"></script>
 </body>
 </html>
