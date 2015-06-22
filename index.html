@@ -95,6 +95,12 @@
 	void main(void){
 		vec4 bfsamp = texture2D(backfaceTexture, gl_FragCoord.xy * backfaceInvResolution);
 
+		//reject null bf texture samples
+		if(bfsamp.a < 0.01){
+			gl_FragColor = vec4(0);
+			return;
+		}
+
 		vec3 rayStart = worldCoord;
 		vec3 rayEnd = bfsamp.xyz;
 

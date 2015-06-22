@@ -80,7 +80,7 @@ var app = (function(){
 		backfaceRenderTarget = new THREE.WebGLRenderTarget(getDrawWidth(), getDrawHeight(), {
 			magFilter: THREE.NearestFilter,
 			minFilter: THREE.NearestFilter,
-			format: THREE.RGBFormat,
+			format: THREE.RGBAFormat,
 			type: THREE.UnsignedByteType,
 			depthBuffer: false,
 			stencilBuffer: false,
@@ -241,8 +241,8 @@ var app = (function(){
 	function getScreenHeight(){return window.innerHeight;}
 	function getScreenAspect(){return getScreenWidth() / getScreenHeight();}
 
-	function getDrawWidth(){return window.innerWidth * .5;}
-	function getDrawHeight(){return window.innerHeight * .5;}
+	function getDrawWidth(){return window.innerWidth * .25;}
+	function getDrawHeight(){return window.innerHeight * .25;}
 	function getDrawAspect(){return getDrawWidth() / getDrawHeight();}
 
 	return {
