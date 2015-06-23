@@ -1,4 +1,3 @@
-- Inside fly through
 - Lower resolution sky
 - Environment shadows
 - Voxel lookup

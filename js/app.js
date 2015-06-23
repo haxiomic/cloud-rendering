@@ -24,14 +24,14 @@ var app = (function(){
 	//render targets
 	var backfaceRenderTarget;
 	var screenbufferRenderTarget;
-	//misc
-	var cameraNormal;
 
 	//settings
 	var cubeRenderScaleFactor = parseFloat(URLParams.get("s", 0.3));
 	var sunInclination = parseFloat(URLParams.get("inc", 0.35));
 	var sunAzimuth = parseFloat(URLParams.get("az", 0.35));
 
+	//misc
+	var cameraNormal;
 	var initTime;
 	var time;
 
@@ -56,7 +56,6 @@ var app = (function(){
 		controls = new THREE.OrbitControls(cubeCamera);
 		cameraNormal = new THREE.Vector3(0,0,-1);
 		var sunPosition = computeSunPosition(sunInclination, sunAzimuth);
-
 
 		//set properties
 		//renderer
