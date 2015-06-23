@@ -129,6 +129,9 @@
 	}
 
 	vec4 raymarchTransmittance(in vec3 rayStart, in vec3 rayDir, in float maxLen){
+
+		#define RETURN() float alpha = 1.0 - tm; return vec4(col / max(alpha, 0.01), alpha)
+
 		float scd = distance(cameraPosition, rayStart);
 
 		float stepSize = 0.01;
@@ -171,16 +174,14 @@
 
 			//exit condition
 			if(t >= maxLen || tm < 0.01){
-				float alpha = 1.0 - tm;
-				return vec4(col / alpha, alpha);
-				// break;
+				RETURN();
 			}
 		}
 		
 		for(int i = 0; i < 30; i++){
 			pos = t * rayDir + rayStart;
 
-			float den = map6(pos*noiseScale + noiseOffset)*denMultiplier - denOffset;
+			float den = map5(pos*noiseScale + noiseOffset)*denMultiplier - denOffset;
 
 			if(den > 0.01){
 				float dtm = exp(-transmittance * den);
@@ -205,9 +206,7 @@
 
 			//exit condition
 			if(t >= maxLen || tm < 0.01){
-				float alpha = 1.0 - tm;
-				return vec4(col / alpha, alpha);
-				// break;
+				RETURN();
 			}
 		}
 
@@ -239,15 +238,12 @@
 
 			//exit condition
 			if(t >= maxLen || tm < 0.01){
-				float alpha = 1.0 - tm;
-				return vec4(col / alpha, alpha);
-				// break;
+				RETURN();
 			}
 		}
 		
 
-		float alpha = 1.0 - tm;
-		return vec4(col / alpha, alpha);
+		RETURN();
 	}
 
 	void main(void){
@@ -273,8 +269,16 @@
 		vec4 col = raymarchTransmittance(rayStart, rayDir, rayLen);
 
 		//sun glare
-		float dotSun = clamp(dot(sunPosition, rayDir), 0.0, 1.);
-		col.xyz += 0.4*vec3(0.99,0.99,0.90) * dotSun * dotSun * dotSun / (col.a);
+		float dotSun = dot(sunPosition, rayDir);
+
+		if(dotSun < 0.0){
+			dotSun = -dotSun * 0.3;//reduce reflection intensity
+			col.xyz += 0.4*vec3(0.99,0.99,0.90) * dotSun;
+		}else{
+			col.xyz += 0.4*vec3(0.99,0.99,0.90) * dotSun * dotSun * dotSun / max(col.a, 0.01);
+			
+		}
+
 
 		gl_FragColor = col;
 	}
