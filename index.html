@@ -24,7 +24,7 @@
 	uniform vec3 cameraNormal;
 	varying vec3 worldCoord;
 
-	const float near = 0.001 * 1.1;
+	const float near = 0.001 * 1.01;
 
 	void main(void){
 		//@! if position behind camera, flatten position to camera plane
@@ -59,10 +59,13 @@
 
 	varying vec3 worldCoord;
 
-	// #define LOW_QUALITY
-	const float transmittance = 1.4;//1.3
+	// #define DEBUG_LOD
+
+	const float transmittance = 2.4;//1.3
+	const float noiseScale = 4.0;
 	const vec3 shadeColor = vec3(130./255., 130./255., 130./255.) * 1.8;
 	const vec3 diffuseColor = vec3(255./255., 254./255., 240./255.);
+	const int maxSteps = 120;
 
 	//iq's magic 3d texture noise
 	float noise( in vec3 x ){
@@ -73,6 +76,18 @@
 		vec2 uv = (p.xy+vec2(37.0,17.0)*p.z) + f.xy;
 		vec2 rg = texture2D( noiseTexture, (uv+ 0.5)/256.0, -100.0 ).yx;
 		return mix( rg.x, rg.y, f.z );
+	}
+
+	float map6(in vec3 p){
+		vec3 q = p;
+		float f;
+		f  = 0.5000*noise( q ); q = q*2.02;
+		f += 0.2500*noise( q ); q = q*2.03;
+		f += 0.12500*noise( q ); q = q*2.01;
+		f += 0.06250*noise( q ); q = q*2.02;
+		f += 0.03125*noise( q ); q = q*2.03;
+		f += 0.015625*noise( q );
+		return f * f * f;
 	}
 
 	float map5(in vec3 p){
@@ -105,11 +120,13 @@
 		return f * f * f;
 	}
 
-	#ifndef LOW_QUALITY
-	#define DENS_FUNC(P) map5(P)
-	#else
-	#define DENS_FUNC(P) map3(P)
-	#endif
+	float map2(in vec3 p){
+		vec3 q = p;
+		float f;
+		f  = 0.5000*noise( q ); q = q*2.02;
+		f += 0.2500*noise( q );
+		return f * f * f;
+	}
 
 	vec4 raymarchTransmittance(in vec3 rayStart, in vec3 rayDir, in float maxLen){
 		float scd = distance(cameraPosition, rayStart);
@@ -122,41 +139,112 @@
 
 		vec3 pos, uCol;
 
-		for(int i = 0; i < 120; i++){
+		float denMultiplier = (sin(time * 0.5)*0.8 + 2.0)*.5;
+		float denOffset = 0.1;
+		vec3 noiseOffset = vec3(time * .1, 0.0, time * .05);
+
+		for(int i = 0; i < 20; i++){
 			pos = t * rayDir + rayStart;
 
-			float den = DENS_FUNC(pos * 2.1 + vec3(time * .1, 0.0, time * .05))*(sin(time * 0.5) + 2.0)*.5 - 0.1;
+			float den = map4(pos*noiseScale + denOffset)*denMultiplier - denOffset;
 
 			if(den > 0.01){
 				float dtm = exp(-transmittance * den);
 				tm *= dtm;
 
-				//debug colors
-				// vec3 shadeColor = vec3(0.0);
-				// vec3 diffuseColor = vec3(255./255., 0./255., 0./255.);
-				// vec3 shadeColor = vec3(0.0, 1.0, 0.0);
-				// vec3 diffuseColor = vec3(1.0, 0.0, 0.0);
+				float shadeFactor = 1. - dot(pos, sunPosition);
+
+				uCol = mix(diffuseColor, shadeColor, shadeFactor) / (pow(shadeFactor + 0.4, .4) * 1.0);
+
+				#ifdef DEBUG_LOD
+				uCol = uCol * vec3(0.7, 0.7, 1);
+				#endif
+
+			    col += (1.0 - dtm) * uCol * tm;
+			}
+
+			//step forward
+			float df = (scd *.25 + t);
+			stepSize = max(0.01, df*0.01);
+
+			t += stepSize;
+
+			//exit condition
+			if(t >= maxLen || tm < 0.01){
+				float alpha = 1.0 - tm;
+				return vec4(col / alpha, alpha);
+				// break;
+			}
+		}
+		
+		for(int i = 0; i < 30; i++){
+			pos = t * rayDir + rayStart;
+
+			float den = map6(pos*noiseScale + denOffset)*denMultiplier - denOffset;
+
+			if(den > 0.01){
+				float dtm = exp(-transmittance * den);
+				tm *= dtm;
 
 				float shadeFactor = 1. - dot(pos, sunPosition);
 
 				uCol = mix(diffuseColor, shadeColor, shadeFactor) / (pow(shadeFactor + 0.4, .4) * 1.0);
 
-			    col += (1.0 - dtm) * uCol * tm;
+				#ifdef DEBUG_LOD
+				uCol = uCol * vec3(0.7, 1.0, 0.7);
+				#endif
+
+			   	col += (1.0 - dtm) * uCol * tm;
 			}
 
-			float df = (scd * .6 + t);
-			#ifndef LOW_QUALITY
-			stepSize = max(0.01, df*df*0.03);
-			#else
-			stepSize = max(0.02, df*df*0.06); //for slow machines
-			#endif
+			//step forward
+			float df = (scd *.25 + t);
+			stepSize = max(0.01, df*0.02);
 
 			t += stepSize;
 
 			//exit condition
-			if(t >= maxLen || tm < 0.01)
-				break;
+			if(t >= maxLen || tm < 0.01){
+				float alpha = 1.0 - tm;
+				return vec4(col / alpha, alpha);
+				// break;
+			}
 		}
+
+		for(int i = 0; i < 120; i++){
+			pos = t * rayDir + rayStart;
+
+			float den = map3(pos*noiseScale + denOffset)*denMultiplier - denOffset;
+
+			if(den > 0.01){
+				float dtm = exp(-transmittance * den);
+				tm *= dtm;
+
+				float shadeFactor = 1. - dot(pos, sunPosition);
+
+				uCol = mix(diffuseColor, shadeColor, shadeFactor) / (pow(shadeFactor + 0.4, .4) * 1.0);
+
+				#ifdef DEBUG_LOD
+				uCol = uCol * vec3(1, 0.7, 0.7);
+				#endif
+
+			    col += (1.0 - dtm) * uCol * tm;
+			}
+
+			//step forward
+			float df = (scd *.25 + t);
+			stepSize = max(0.01, df*0.01);
+
+			t += stepSize;
+
+			//exit condition
+			if(t >= maxLen || tm < 0.01){
+				float alpha = 1.0 - tm;
+				return vec4(col / alpha, alpha);
+				// break;
+			}
+		}
+		
 
 		float alpha = 1.0 - tm;
 		return vec4(col / alpha, alpha);
@@ -186,7 +274,7 @@
 
 		//sun glare
 		float dotSun = clamp(dot(sunPosition, rayDir), 0.0, 1.);
-		col.xyz += 0.25*vec3(0.99,0.99,0.92)* dotSun * dotSun * dotSun;
+		col.xyz += 0.4*vec3(0.99,0.99,0.90) * dotSun * dotSun * dotSun / (col.a);
 
 		gl_FragColor = col;
 	}

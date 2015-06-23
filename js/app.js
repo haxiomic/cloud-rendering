@@ -70,7 +70,6 @@ var app = (function(){
 		//controls
 		controls.damping = 0.2;
 		controls.zoomSpeed = 0.5;
-		controls.addEventListener('change', render);
 
 		//get shaders from DOM
 		shaders = ShaderTools.getDOMShaders();
