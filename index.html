@@ -60,12 +60,12 @@
 	varying vec3 worldCoord;
 
 	// #define DEBUG_LOD
+	#define BEST_MAP(P) map6(P)
 
-	const float transmittance = 1.8;//1.3
+	const float transmittance = 2.2;//1.3
 	const float noiseScale = 3.0;
 	const vec3 shadeColor = vec3(130./255., 130./255., 130./255.) * 1.8;
 	const vec3 diffuseColor = vec3(255./255., 254./255., 240./255.);
-	const int maxSteps = 120;
 
 	//iq's magic 3d texture noise
 	float noise( in vec3 x ){
@@ -149,7 +149,7 @@
 		for(int i = 0; i < 20; i++){
 			pos = t * rayDir + rayStart;
 
-			float den = map4(pos*noiseScale + noiseOffset)*denMultiplier - denOffset;
+			float den = map3(pos*noiseScale + noiseOffset)*denMultiplier - denOffset;
 
 			if(den > 0.01){
 				float dtm = exp(-transmittance * den);
@@ -181,7 +181,7 @@
 		for(int i = 0; i < 30; i++){
 			pos = t * rayDir + rayStart;
 
-			float den = map5(pos*noiseScale + noiseOffset)*denMultiplier - denOffset;
+			float den = BEST_MAP(pos*noiseScale + noiseOffset)*denMultiplier - denOffset;
 
 			if(den > 0.01){
 				float dtm = exp(-transmittance * den);
@@ -276,7 +276,6 @@
 			col.xyz += 0.4*vec3(0.99,0.99,0.90) * dotSun;
 		}else{
 			col.xyz += 0.4*vec3(0.99,0.99,0.90) * dotSun * dotSun * dotSun / max(col.a, 0.01);
-			
 		}
 
 
