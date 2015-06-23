@@ -27,7 +27,7 @@ var app = (function(){
 
 	//settings
 	var cubeRenderScaleFactor = parseFloat(URLParams.get("s", 0.3));
-	var sunInclination = parseFloat(URLParams.get("inc", 0.35));
+	var sunInclination = parseFloat(URLParams.get("inc", 0.3));
 	var sunAzimuth = parseFloat(URLParams.get("az", 0.35));
 
 	//misc
