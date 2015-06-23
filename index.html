@@ -139,14 +139,14 @@
 
 		vec3 pos, uCol;
 
-		float denMultiplier = (sin(time * 0.5)*0.8 + 2.0)*.5;
+		float denMultiplier = (sin(time * 0.2)*0.8 + 2.0)*.5;
 		float denOffset = 0.1;
-		vec3 noiseOffset = vec3(time * .1, 0.0, time * .05);
+		vec3 noiseOffset = vec3(time * .07, 0.0, time * .05);
 
 		for(int i = 0; i < 20; i++){
 			pos = t * rayDir + rayStart;
 
-			float den = map4(pos*noiseScale + denOffset)*denMultiplier - denOffset;
+			float den = map4(pos*noiseScale + noiseOffset)*denMultiplier - denOffset;
 
 			if(den > 0.01){
 				float dtm = exp(-transmittance * den);
@@ -180,7 +180,7 @@
 		for(int i = 0; i < 30; i++){
 			pos = t * rayDir + rayStart;
 
-			float den = map6(pos*noiseScale + denOffset)*denMultiplier - denOffset;
+			float den = map6(pos*noiseScale + noiseOffset)*denMultiplier - denOffset;
 
 			if(den > 0.01){
 				float dtm = exp(-transmittance * den);
@@ -214,7 +214,7 @@
 		for(int i = 0; i < 120; i++){
 			pos = t * rayDir + rayStart;
 
-			float den = map3(pos*noiseScale + denOffset)*denMultiplier - denOffset;
+			float den = map3(pos*noiseScale + noiseOffset)*denMultiplier - denOffset;
 
 			if(den > 0.01){
 				float dtm = exp(-transmittance * den);
