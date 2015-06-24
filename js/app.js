@@ -5,7 +5,7 @@ var app = (function(){
 	var renderer;
 	var controls;
 	//cameras
-	var cubeCamera;
+	var camera;
 	var screenPlaneCamera;
 	//scenes
 	var cubeScene;
@@ -47,13 +47,13 @@ var app = (function(){
 
 		//create objects
 		renderer = new THREE.WebGLRenderer();
-		cubeCamera = new THREE.PerspectiveCamera(80, getDrawAspect(), 0.001, 2000000);
+		camera = new THREE.PerspectiveCamera(60, getDrawAspect(), 0.001, 2000000);
 		screenPlaneCamera = new THREE.OrthographicCamera();
 
 		cubeScene = new THREE.Scene();
 		screenPlaneScene = new THREE.Scene();
 		skyScene = new THREE.Scene();
-		controls = new THREE.OrbitControls(cubeCamera);
+		controls = new THREE.OrbitControls(camera);
 		cameraNormal = new THREE.Vector3(0,0,-1);
 		var sunPosition = computeSunPosition(sunInclination, sunAzimuth);
 
@@ -65,7 +65,7 @@ var app = (function(){
 		renderer.setClearColor(0x000000, 0);
 		renderer.setPixelRatio(window.devicePixelRatio);
 		//cameras
-		cubeCamera.position.z = 2.0;
+		camera.position.z = 2.0;
 		screenPlaneCamera.position.z = 1;
 		//controls
 		controls.damping = 0.2;
@@ -211,12 +211,16 @@ var app = (function(){
 		time = Date.now() - initTime;
 		raytracePassMaterial.uniforms.time.value = time / 1000;
 
-		//update camera normal
-		cameraNormal.set(0,0,-1);
-		cameraNormal.applyQuaternion(cubeCamera.quaternion);
-
+		//controls
 		controls.update();
 		// controls.rotateLeft(0.01); //spin
+
+		//update camera normal
+		cameraNormal.set(0,0,-1);
+		cameraNormal.applyQuaternion(camera.quaternion);
+
+		//@!todo: fix cube to cameras position
+
 		render();
 
 		requestAnimationFrame(mainLoop);
@@ -226,12 +230,12 @@ var app = (function(){
 		//backface coordinates pass
 		renderCube.material = backfacePassMaterial;
 		renderer.setViewport (0, 0, getDrawWidth(), getDrawHeight());
-		renderer.render(cubeScene, cubeCamera, backfaceRenderTarget, false);
+		renderer.render(cubeScene, camera, backfaceRenderTarget, false);
 
 		//raytrace pass
 		renderCube.material = raytracePassMaterial;
 		renderer.setViewport (0, 0, getDrawWidth(), getDrawHeight());
-		renderer.render(cubeScene, cubeCamera, screenbufferRenderTarget, false);
+		renderer.render(cubeScene, camera, screenbufferRenderTarget, false);
 
 		//screen pass
 		renderer.setViewport (0, 0, getScreenWidth(), getScreenHeight());
@@ -240,7 +244,7 @@ var app = (function(){
 		// renderer.state.setBlending(THREE.CustomBlending, THREE.SubtractEquation, THREE.OneFactor, THREE.OneFactor);
 
 		renderer.autoClearColor = false;
-		renderer.render(skyScene, cubeCamera, null, false);
+		renderer.render(skyScene, camera, null, false);
 		renderer.render(screenPlaneScene, screenPlaneCamera, null, false);
 		renderer.autoClearColor = true;
 
@@ -250,8 +254,8 @@ var app = (function(){
 	//Events
 	function onWindowResize(){
 		//update cameras
-		cubeCamera.aspect = getDrawAspect();
-		cubeCamera.updateProjectionMatrix();
+		camera.aspect = getDrawAspect();
+		camera.updateProjectionMatrix();
 		screenPlaneCamera.updateProjectionMatrix();
 		//update render targets
 		//@! causes problems with upscaling
