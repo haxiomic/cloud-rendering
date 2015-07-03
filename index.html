@@ -162,19 +162,19 @@
 		
 
 		const float d = 0.6;
-		debugCol = vec3(d, d, 1.0);
+		debugCol = vec3(d, d, 1.0);//blue
 		MARCH(10, map3, 0.01, 0.00);
 		
-		debugCol = vec3(d, 1.0, d);
+		debugCol = vec3(d, 1.0, d);//green
 		MARCH(40, map6, 0.01, 0.00);
 
-		debugCol = vec3(1.0, d, d);
+		debugCol = vec3(1.0, d, d);//red
 		MARCH(20, map5, 0.01, 0.00);
 
-		debugCol = vec3(1.0, 1.0, d);
+		debugCol = vec3(1.0, 1.0, d);//yellow
 		MARCH(20, map3, 0.02, 0.00);
 
-		debugCol = vec3(1.0, d, 1.0);
+		debugCol = vec3(1.0, d, 1.0);//pink/purple
 		MARCH(100, map2, 0.01, 0.00);
 
 		RETURN();
